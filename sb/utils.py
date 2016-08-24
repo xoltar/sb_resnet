@@ -1,3 +1,4 @@
+from __future__ import print_function
 from __future__ import division
 
 import os
@@ -110,16 +111,16 @@ class Timer():
     def __enter__(self):
         self.start = time()
         if not self.newline:
-            print self.txt + "... ",
+            print(self.txt + "... ")
             sys.stdout.flush()
         else:
-            print self.txt + "... "
+            print(self.txt + "... ")
 
     def __exit__(self, type, value, tb):
         if self.newline:
-            print self.txt + " done in ",
+            print(self.txt + " done in ")
 
-        print "{:.2f} sec.".format(time()-self.start)
+        print("{:.2f} sec.".format(time()-self.start))
 
 
 ########################

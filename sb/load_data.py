@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import pickle
 import random
@@ -8,7 +9,11 @@ import os
 
 import theano
 import utils
-
+import sys
+if sys.version_info[0] >= 3:
+        from urllib.request import urlretrieve
+else:
+        from urllib import urlretrieve
 
 def concatenate_images(images, shape=None, dim=None, border_size=0, clim=(-1, 1)):
     """
@@ -173,14 +178,14 @@ def load_mnist(path, target_as_one_hot=False, flatten=False, split=(50000, 10000
             import urllib
             origin = 'http://www.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz'
             print("Downloading data (16 Mb) from {} ...".format(origin))
-            urllib.urlretrieve(origin, mnist_picklefile)
+            urlretrieve(origin, mnist_picklefile)
 
         # Load the dataset and process it.
         inputs = []
         labels = []
         print("Processing data ...")
         with gzip.open(mnist_picklefile, 'rb') as f:
-            trainset, validset, testset = pickle.load(f)
+            trainset, validset, testset = pickle.load(f, encoding='latin1')
 
         inputs = np.concatenate([trainset[0], validset[0], testset[0]], axis=0).reshape((-1, 1, 28, 28))
         labels = np.concatenate([trainset[1], validset[1], testset[1]], axis=0).astype(np.int8)
@@ -236,7 +241,7 @@ def load_mnist_w_rotations(path, target_as_one_hot=False, flatten=False, split=(
             import urllib
             origin = 'http://www.ics.uci.edu/~enalisni/mnist_plus_rot.pkl.gz'
             print("Downloading data (100 Mb) from {} ...".format(origin))
-            urllib.urlretrieve(origin, mnist_picklefile)
+            urlretrieve(origin, mnist_picklefile)
 
         with gzip.open(mnist_picklefile, 'rb') as f:
             data = pickle.load(f)
@@ -297,7 +302,7 @@ def load_binarized_mnist(path, ordering=None, flatten=False, split=(50000, 10000
                 import urllib
                 origin = 'http://www.cs.toronto.edu/~larocheh/public/datasets/mnist/' + mnist_textfile_name
                 print("Downloading data ({} Mb) from {} ...".format(filesize, origin))
-                urllib.urlretrieve(origin, mnist_textfile)
+                urlretrieve(origin, mnist_textfile)
 
         print("Processing data ...")
         train_file, valid_file, test_file = [os.path.join(data_dir, 'mnist_' + ds + '.txt') for ds in ['train', 'valid', 'test']]
@@ -365,7 +370,7 @@ def load_ocr_letter(path, ordering=None, flatten=False, split=(32152, 10000, 100
             import urllib
             origin = 'http://ai.stanford.edu/~btaskar/ocr/letter.data.gz'
             print("Downloading data (22 Mb) from {} ...".format(origin))
-            urllib.urlretrieve(origin, mnist_gzipfile)
+            urlretrieve(origin, mnist_gzipfile)
 
         print("Processing data ...")
         # TODO: refactor the data processing.
@@ -382,7 +387,7 @@ def load_ocr_letter(path, ordering=None, flatten=False, split=(32152, 10000, 100
 
                 target = letters.find(tokens[1])
                 if target < 0:
-                    print 'Target ' + tokens[1] + ' not found!'
+                    print('Target ' + tokens[1] + ' not found!')
 
                 s = s + str(target) + '\n'
                 all_data += [s]
@@ -437,7 +442,7 @@ def load_svhn_pca(path, target_as_one_hot=False, train_valid_split=(65000, 8254)
             import urllib
             origin = 'http://www.ics.uci.edu/~enalisni/svhn_pca.pkl.gz'
             print("Downloading data (370 Mb) from {} ...".format(origin))
-            urllib.urlretrieve(origin, svhn_picklefile)
+            urlretrieve(origin, svhn_picklefile)
 
         with gzip.open(svhn_picklefile, 'rb') as f:
             data = pickle.load(f)
@@ -499,7 +504,7 @@ def load_penn_treebank(path, sequence_length=100, return_raw=False):
             import urllib
             origin = 'https://www.dropbox.com/s/9hwo2392mfgnnlu/ptb.zip?dl=1'  # Marc's dropbox, TODO: put that somewhere else.
             print("Downloading data (2 Mb) from {} ...".format(origin))
-            urllib.urlretrieve(origin, ptb_zipfile)
+            urlretrieve(origin, ptb_zipfile)
 
         # Load the dataset and process it.
         print("Processing data ...")
@@ -576,7 +581,7 @@ def load_cifar10(path, target_as_one_hot=False, flatten=False, split=(45000, 500
             import urllib
             origin = 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
             print("Downloading data (163 Mb) from {} ...".format(origin))
-            urllib.urlretrieve(origin, cifar10_tarfile)
+            urlretrieve(origin, cifar10_tarfile)
 
         # Load the dataset and process it.
         inputs = []
@@ -661,7 +666,7 @@ def load_text8(path, sequence_length=180, split=(90000000, 5000000, 5000000)):
             import urllib
             origin = 'http://mattmahoney.net/dc/text8.zip'
             print("Downloading data (30 Mb) from {} ...".format(origin))
-            urllib.urlretrieve(origin, data_zipfile)
+            urlretrieve(origin, data_zipfile)
 
         # Load the dataset and process it.
         inputs = []

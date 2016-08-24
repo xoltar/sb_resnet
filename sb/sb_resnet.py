@@ -9,9 +9,10 @@ References
         http://arxiv.org/abs/1512.03385
 """
 from __future__ import division
+from __future__ import print_function
 
 import numpy as np
-import cPickle
+from six.moves import cPickle
 import argparse
 import os
 import sys
@@ -23,12 +24,16 @@ import theano
 import theano.tensor as T
 import theano.printing
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+try:
+    xrange
+except NameError:
+    xrange = range
 
 import lasagne
 try:
     from lasagne.layers.dnn import Conv2DDNNLayer as ConvLayer
 except:
-    print "* Cannot find cudNN for Conv2DDNNLayer. Falling back to Theano's implementation."
+    print("* Cannot find cudNN for Conv2DDNNLayer. Falling back to Theano's implementation.")
     from lasagne.layers import Conv2DLayer as ConvLayer
 
 from lasagne.layers import ConcatLayer, ElemwiseSumLayer
@@ -238,7 +243,7 @@ def run_ResNet(dataset,
     train_set_size = int(train_set_y.shape[0].eval())
     valid_set_size = int(valid_set_y.shape[0].eval())
     test_set_size = int(test_set_y.shape[0].eval())
-    print 'Dataset {} loaded ({:,}|{:,}|{:,})'.format(dataset_name, train_set_size, valid_set_size, test_set_size)
+    print('Dataset {} loaded ({:,}|{:,}|{:,})'.format(dataset_name, train_set_size, valid_set_size, test_set_size))
 
     # compute number of minibatches for training, validation and testing
     n_train_batches = int(np.ceil(train_set_size / batch_size))
@@ -246,7 +251,7 @@ def run_ResNet(dataset,
     n_test_batches = int(np.ceil(test_set_size / batch_size))
 
     # BUILD MODEL
-    print 'Building the model ...'
+    print('Building the model ...')
 
     # allocate symbolic variables for the data
     index = T.lscalar()    # index to a [mini]batch
@@ -263,7 +268,7 @@ def run_ResNet(dataset,
     input_layer.input_var = x
     layers_per_phase = ((depth-2) // 9) * 3
     network, infos = build_sb_resnet(input_layer, depth, output_size)
-    print "Number of parameters in model: {:,}".format(lasagne.layers.count_params(network, trainable=True))
+    print("Number of parameters in model: {:,}".format(lasagne.layers.count_params(network, trainable=True)))
 
     # Create a loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy loss):
@@ -288,16 +293,16 @@ def run_ResNet(dataset,
 
     # If params already exist and 'force' is False, reload parameters.
     params_pkl_filename = pjoin(experiment_dir, 'conv_sb-resnet_params_' + output_file_base_name + '.pkl')
-    print "Checking if '{}' already exists.".format(params_pkl_filename)
+    print("Checking if '{}' already exists.".format(params_pkl_filename))
     if os.path.isfile(params_pkl_filename) and not force:
-        print "Yes! Reloading existing parameters and resuming training (use --force to overwrite)."
+        print("Yes! Reloading existing parameters and resuming training (use --force to overwrite).")
         last_params = cPickle.load(open(params_pkl_filename, 'rb'))
         for param, last_param in zip(params, last_params):
             param.set_value(last_param)
     elif force:
-        print "Yes! but --force was used. Starting from scratch."
+        print("Yes! but --force was used. Starting from scratch.")
     else:
-        print "No! Starting from scratch."
+        print("No! Starting from scratch.")
 
     gradients = dict(zip(params, T.grad(cost, params)))
 
@@ -317,7 +322,7 @@ def run_ResNet(dataset,
 
     # Compile theano function for training. This updates the model parameters and
     # returns the training nll term, kl term, and the avg. nb. of layers used in each phase.
-    print 'Compiling train function ...'
+    print('Compiling train function ...')
     compiling_start = time.time()
     train_model = theano.function(inputs=[index], outputs=[ll_term.mean(), kl_term.mean(),
                                                            avg_n_layers_phase1, avg_n_layers_phase2, avg_n_layers_phase3,
@@ -325,7 +330,7 @@ def run_ResNet(dataset,
                                   updates=updates,
                                   givens={x: train_set_x[index * batch_size:(index + 1) * batch_size],
                                           y: train_set_y[index * batch_size:(index + 1) * batch_size]})
-    print "{:.2f}".format((time.time()-compiling_start)/60.)
+    print("{:.2f}".format((time.time()-compiling_start)/60.))
 
     # Create a loss expression for validation/testing
     test_prediction = lasagne.layers.get_output(network, deterministic=True)
@@ -333,26 +338,26 @@ def run_ResNet(dataset,
     test_loss = test_loss.mean()
     test_error = T.sum(T.neq(T.argmax(test_prediction, axis=1), y), dtype=theano.config.floatX)
 
-    print 'Compiling valid function ...'
+    print('Compiling valid function ...')
     compiling_start = time.time()
     valid_model = theano.function(inputs=[index],
                                   outputs=[test_loss, test_error],
                                   givens={x: valid_set_x[index * batch_size:(index + 1) * batch_size],
                                           y: valid_set_y[index * batch_size:(index + 1) * batch_size]})
-    print "{:.2f}".format((time.time()-compiling_start)/60.)
+    print("{:.2f}".format((time.time()-compiling_start)/60.))
 
-    print 'Compiling test function ...'
+    print('Compiling test function ...')
     compiling_start = time.time()
     test_model = theano.function(inputs=[index],
                                  outputs=[test_loss, test_error],
                                  givens={x: test_set_x[index * batch_size:(index + 1) * batch_size],
                                          y: test_set_y[index * batch_size:(index + 1) * batch_size]})
-    print "{:.2f}".format((time.time()-compiling_start)/60.)
+    print("{:.2f}".format((time.time()-compiling_start)/60.))
 
     ###############
     # TRAIN MODEL #
     ###############
-    print 'Training for {} epochs ...'.format(n_epochs)
+    print('Training for {} epochs ...'.format(n_epochs))
 
     best_params = None
     best_valid_error = np.inf
@@ -395,11 +400,11 @@ def run_ResNet(dataset,
                                          float(avg_training_loss),
                                          float(avg_training_kl), float(avg_kl_term_1), float(avg_kl_term_2), float(avg_kl_term_3),
                                          (time.time()-epoch_start_time)/60.)
-                print results
+                print(results)
 
             if np.isnan(avg_training_loss):
                 msg = "NaN detected! Stopping."
-                print msg
+                print(msg)
                 results_file.write(msg + "\n")
                 results_file.flush()
                 sys.exit(1)
@@ -457,7 +462,7 @@ def run_ResNet(dataset,
                                  avg_training_kl_tracker, avg_kl_term_1_tracker, avg_kl_term_2_tracker, avg_kl_term_3_tracker,
                                  valid_loss, valid_error, valid_nb_errors,
                                  (epoch_end_time-epoch_start_time)/60)
-        print results
+        print(results)
 
         results_file.write(results + "\n")
         results_file.flush()
@@ -481,12 +486,12 @@ def run_ResNet(dataset,
 
     results = "Done! best epoch {}, test loss {:.4f}, test error {:.2%} ({:,}), training time {:.2f}m"
     results = results.format(best_iter, test_loss, test_error, test_nb_errors, (end_time-start_time)/60)
-    print results
+    print(results)
 
     results_file.write(results + "\n")
     results_file.close()
 
-    print >> sys.stderr, ('The code for file ' + os.path.split(__file__)[1] + ' ran for %.2fm' % ((end_time - start_time) / 60.))
+    print(('The code for file ' + os.path.split(__file__)[1] + ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
 
 
 def build_argparser():
@@ -542,7 +547,7 @@ if __name__ == '__main__':
     if (args.depth-2) % 9 != 0:
         raise ValueError("Depth of this network should be 9*n+2 where n is the number of desired residual blocks.")
 
-    print "Using Theano v.{}".format(theano.version.short_version)
+    print("Using Theano v.{}".format(theano.version.short_version))
 
     # LEARNING PARAMS
     epsilon = 0.01
@@ -552,8 +557,8 @@ if __name__ == '__main__':
     dataset_dir = mkdirs("./datasets")
     mkdirs(args.experiment_dir)
 
-    print "Datasets dir: {}".format(os.path.abspath(dataset_dir))
-    print "Experiment dir: {}".format(os.path.abspath(args.experiment_dir))
+    print("Datasets dir: {}".format(os.path.abspath(dataset_dir)))
+    print("Experiment dir: {}".format(os.path.abspath(args.experiment_dir)))
 
     if args.dataset == 'mnist_plus_rot':
         dataset = pjoin(dataset_dir, args.dataset + ".pkl")
