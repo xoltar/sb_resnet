@@ -332,6 +332,10 @@ def run_ResNet(dataset,
                                           y: train_set_y[index * batch_size:(index + 1) * batch_size]})
     print("{:.2f}".format((time.time()-compiling_start)/60.))
 
+    # for output in train_model.maker.fgraph.outputs:
+    #     print("-------------------------------------------------------------")
+    #     theano.pp(output)
+
     # Create a loss expression for validation/testing
     test_prediction = lasagne.layers.get_output(network, deterministic=True)
     test_loss = lasagne.objectives.categorical_crossentropy(test_prediction, T.cast(y, dtype="int32"))
@@ -357,142 +361,142 @@ def run_ResNet(dataset,
     ###############
     # TRAIN MODEL #
     ###############
-    print('Training for {} epochs ...'.format(n_epochs))
+    # print('Training for {} epochs ...'.format(n_epochs))
+    #
+    # best_params = None
+    # best_valid_error = np.inf
+    # best_iter = 0
+    # start_time = time.clock()
+    #
+    # results_filename = pjoin(experiment_dir, "conv_sb-resnet_results_" + output_file_base_name + ".txt")
+    # if os.path.isfile(results_filename) and not force:
+    #     last_result = open(results_filename, 'rb').readlines()[-1]
+    #     idx_start = len("epoch ")
+    #     idx_end = last_result.find(",", idx_start+1)
+    #     start_epoch = int(last_result[idx_start:idx_end]) + 1
+    #     results_file = open(results_filename, 'ab')
+    # else:
+    #     start_epoch = 0
+    #     results_file = open(results_filename, 'wb')
+    #
+    # stop_training = False
+    # for epoch_counter in range(start_epoch, n_epochs):
+    #     if stop_training:
+    #         break
+    #
+    #     # Train this epoch
+    #     epoch_start_time = time.time()
+    #     avg_training_loss_tracker = 0.
+    #     avg_training_kl_tracker = 0.
+    #     avg_n_layers_phase1_tracker = 0.
+    #     avg_n_layers_phase2_tracker = 0.
+    #     avg_n_layers_phase3_tracker = 0.
+    #     avg_kl_term_1_tracker = 0.
+    #     avg_kl_term_2_tracker = 0.
+    #     avg_kl_term_3_tracker = 0.
+    #
+    #     for minibatch_index in xrange(n_train_batches):
+    #         avg_training_loss, avg_training_kl, avg_n_layers_phase1, avg_n_layers_phase2, avg_n_layers_phase3, avg_kl_term_1, avg_kl_term_2, avg_kl_term_3 = train_model(minibatch_index)
+    #         if minibatch_index % 1 == 0:
+    #             results = "batch #{}-{}, avg n_layers per phase ({:.2f}|{:.2f}|{:.2f})/{}, training loss (nll) {:.4f}, training kl-div {:.4f} ({:.4f}|{:.4f}|{:.4f}), time {:.2f}m"
+    #             results = results.format(epoch_counter, minibatch_index,
+    #                                      float(avg_n_layers_phase1), float(avg_n_layers_phase2), float(avg_n_layers_phase3), layers_per_phase,
+    #                                      float(avg_training_loss),
+    #                                      float(avg_training_kl), float(avg_kl_term_1), float(avg_kl_term_2), float(avg_kl_term_3),
+    #                                      (time.time()-epoch_start_time)/60.)
+    #             print(results)
+    #
+    #         if np.isnan(avg_training_loss):
+    #             msg = "NaN detected! Stopping."
+    #             print(msg)
+    #             results_file.write(msg + "\n")
+    #             results_file.flush()
+    #             sys.exit(1)
+    #
+    #         avg_training_loss_tracker += avg_training_loss
+    #         avg_training_kl_tracker += avg_training_kl
+    #         avg_n_layers_phase1_tracker += avg_n_layers_phase1
+    #         avg_n_layers_phase2_tracker += avg_n_layers_phase2
+    #         avg_n_layers_phase3_tracker += avg_n_layers_phase3
+    #         avg_kl_term_1_tracker += avg_kl_term_1
+    #         avg_kl_term_2_tracker += avg_kl_term_2
+    #         avg_kl_term_3_tracker += avg_kl_term_3
+    #
+    #     epoch_end_time = time.time()
+    #
+    #     # Compute some infos about training.
+    #     avg_training_loss_tracker /= n_train_batches
+    #     avg_training_kl_tracker /= n_train_batches
+    #     avg_n_layers_phase1_tracker /= n_train_batches
+    #     avg_n_layers_phase2_tracker /= n_train_batches
+    #     avg_n_layers_phase3_tracker /= n_train_batches
+    #     avg_kl_term_1_tracker /= n_train_batches
+    #     avg_kl_term_2_tracker /= n_train_batches
+    #     avg_kl_term_3_tracker /= n_train_batches
+    #
+    #     # Compute validation error --- sample multiple times to simulate posterior predictive distribution
+    #     valid_errors = np.zeros((n_valid_batches,))
+    #     valid_loss = np.zeros((n_valid_batches,))
+    #     for idx in xrange(int(n_validation_resamples)):
+    #         temp_valid_loss, temp_valid_errors = zip(*[valid_model(i) for i in xrange(n_valid_batches)])
+    #         valid_errors += temp_valid_errors
+    #         valid_loss += temp_valid_loss
+    #     valid_loss = np.sum(valid_loss/n_validation_resamples) / n_valid_batches
+    #     valid_nb_errors = np.sum(valid_errors/n_validation_resamples)
+    #     valid_error = valid_nb_errors / valid_set_size
+    #
+    #     results = ("epoch {}, avg n_layers per phase ({:.2f}|{:.2f}|{:.2f})/{}, train loss (nll) {:.4f}, "
+    #                "train kl-div {:.4f}, train kl-div per phase ({:.4f}|{:.4f}|{:.4f}), "
+    #                "valid loss {:.4f}, valid error {:.2%} ({:,}), time {:.2f}m")
+    #
+    #     if valid_error < best_valid_error:
+    #         best_iter = epoch_counter
+    #         best_valid_error = valid_error
+    #         results += " **"
+    #         # Save progression
+    #         best_params = [param.get_value().copy() for param in params]
+    #         cPickle.dump(best_params, open(params_pkl_filename, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL)
+    #     elif epoch_counter-best_iter > lookahead:
+    #         stop_training = True
+    #
+    #     # Report and save progress.
+    #     results = results.format(epoch_counter,
+    #                              avg_n_layers_phase1_tracker, avg_n_layers_phase2_tracker, avg_n_layers_phase3_tracker, layers_per_phase,
+    #                              avg_training_loss_tracker,
+    #                              avg_training_kl_tracker, avg_kl_term_1_tracker, avg_kl_term_2_tracker, avg_kl_term_3_tracker,
+    #                              valid_loss, valid_error, valid_nb_errors,
+    #                              (epoch_end_time-epoch_start_time)/60)
+    #     print(results)
+    #
+    #     results_file.write(results + "\n")
+    #     results_file.flush()
+    #
+    # end_time = time.clock()
+    #
+    # # Reload best model.
+    # for param, best_param in zip(params, best_params):
+    #     param.set_value(best_param)
+    #
+    # # Compute test error --- sample multiple times to simulate posterior predictive distribution
+    # test_errors = np.zeros((n_test_batches,))
+    # test_loss = np.zeros((n_test_batches,))
+    # for idx in xrange(int(n_test_resamples)):
+    #     temp_test_loss, temp_test_errors = zip(*[test_model(i) for i in xrange(n_test_batches)])
+    #     test_errors += temp_test_errors
+    #     test_loss += temp_test_loss
+    # test_loss = np.sum(test_loss/n_test_resamples) / n_test_batches
+    # test_nb_errors = np.sum(test_errors/n_test_resamples)
+    # test_error = test_nb_errors / test_set_size
+    #
+    # results = "Done! best epoch {}, test loss {:.4f}, test error {:.2%} ({:,}), training time {:.2f}m"
+    # results = results.format(best_iter, test_loss, test_error, test_nb_errors, (end_time-start_time)/60)
+    # print(results)
+    #
+    # results_file.write(results + "\n")
+    # results_file.close()
 
-    best_params = None
-    best_valid_error = np.inf
-    best_iter = 0
-    start_time = time.clock()
-
-    results_filename = pjoin(experiment_dir, "conv_sb-resnet_results_" + output_file_base_name + ".txt")
-    if os.path.isfile(results_filename) and not force:
-        last_result = open(results_filename, 'rb').readlines()[-1]
-        idx_start = len("epoch ")
-        idx_end = last_result.find(",", idx_start+1)
-        start_epoch = int(last_result[idx_start:idx_end]) + 1
-        results_file = open(results_filename, 'ab')
-    else:
-        start_epoch = 0
-        results_file = open(results_filename, 'wb')
-
-    stop_training = False
-    for epoch_counter in range(start_epoch, n_epochs):
-        if stop_training:
-            break
-
-        # Train this epoch
-        epoch_start_time = time.time()
-        avg_training_loss_tracker = 0.
-        avg_training_kl_tracker = 0.
-        avg_n_layers_phase1_tracker = 0.
-        avg_n_layers_phase2_tracker = 0.
-        avg_n_layers_phase3_tracker = 0.
-        avg_kl_term_1_tracker = 0.
-        avg_kl_term_2_tracker = 0.
-        avg_kl_term_3_tracker = 0.
-
-        for minibatch_index in xrange(n_train_batches):
-            avg_training_loss, avg_training_kl, avg_n_layers_phase1, avg_n_layers_phase2, avg_n_layers_phase3, avg_kl_term_1, avg_kl_term_2, avg_kl_term_3 = train_model(minibatch_index)
-            if minibatch_index % 1 == 0:
-                results = "batch #{}-{}, avg n_layers per phase ({:.2f}|{:.2f}|{:.2f})/{}, training loss (nll) {:.4f}, training kl-div {:.4f} ({:.4f}|{:.4f}|{:.4f}), time {:.2f}m"
-                results = results.format(epoch_counter, minibatch_index,
-                                         float(avg_n_layers_phase1), float(avg_n_layers_phase2), float(avg_n_layers_phase3), layers_per_phase,
-                                         float(avg_training_loss),
-                                         float(avg_training_kl), float(avg_kl_term_1), float(avg_kl_term_2), float(avg_kl_term_3),
-                                         (time.time()-epoch_start_time)/60.)
-                print(results)
-
-            if np.isnan(avg_training_loss):
-                msg = "NaN detected! Stopping."
-                print(msg)
-                results_file.write(msg + "\n")
-                results_file.flush()
-                sys.exit(1)
-
-            avg_training_loss_tracker += avg_training_loss
-            avg_training_kl_tracker += avg_training_kl
-            avg_n_layers_phase1_tracker += avg_n_layers_phase1
-            avg_n_layers_phase2_tracker += avg_n_layers_phase2
-            avg_n_layers_phase3_tracker += avg_n_layers_phase3
-            avg_kl_term_1_tracker += avg_kl_term_1
-            avg_kl_term_2_tracker += avg_kl_term_2
-            avg_kl_term_3_tracker += avg_kl_term_3
-
-        epoch_end_time = time.time()
-
-        # Compute some infos about training.
-        avg_training_loss_tracker /= n_train_batches
-        avg_training_kl_tracker /= n_train_batches
-        avg_n_layers_phase1_tracker /= n_train_batches
-        avg_n_layers_phase2_tracker /= n_train_batches
-        avg_n_layers_phase3_tracker /= n_train_batches
-        avg_kl_term_1_tracker /= n_train_batches
-        avg_kl_term_2_tracker /= n_train_batches
-        avg_kl_term_3_tracker /= n_train_batches
-
-        # Compute validation error --- sample multiple times to simulate posterior predictive distribution
-        valid_errors = np.zeros((n_valid_batches,))
-        valid_loss = np.zeros((n_valid_batches,))
-        for idx in xrange(int(n_validation_resamples)):
-            temp_valid_loss, temp_valid_errors = zip(*[valid_model(i) for i in xrange(n_valid_batches)])
-            valid_errors += temp_valid_errors
-            valid_loss += temp_valid_loss
-        valid_loss = np.sum(valid_loss/n_validation_resamples) / n_valid_batches
-        valid_nb_errors = np.sum(valid_errors/n_validation_resamples)
-        valid_error = valid_nb_errors / valid_set_size
-
-        results = ("epoch {}, avg n_layers per phase ({:.2f}|{:.2f}|{:.2f})/{}, train loss (nll) {:.4f}, "
-                   "train kl-div {:.4f}, train kl-div per phase ({:.4f}|{:.4f}|{:.4f}), "
-                   "valid loss {:.4f}, valid error {:.2%} ({:,}), time {:.2f}m")
-
-        if valid_error < best_valid_error:
-            best_iter = epoch_counter
-            best_valid_error = valid_error
-            results += " **"
-            # Save progression
-            best_params = [param.get_value().copy() for param in params]
-            cPickle.dump(best_params, open(params_pkl_filename, 'wb'), protocol=cPickle.HIGHEST_PROTOCOL)
-        elif epoch_counter-best_iter > lookahead:
-            stop_training = True
-
-        # Report and save progress.
-        results = results.format(epoch_counter,
-                                 avg_n_layers_phase1_tracker, avg_n_layers_phase2_tracker, avg_n_layers_phase3_tracker, layers_per_phase,
-                                 avg_training_loss_tracker,
-                                 avg_training_kl_tracker, avg_kl_term_1_tracker, avg_kl_term_2_tracker, avg_kl_term_3_tracker,
-                                 valid_loss, valid_error, valid_nb_errors,
-                                 (epoch_end_time-epoch_start_time)/60)
-        print(results)
-
-        results_file.write(results + "\n")
-        results_file.flush()
-
-    end_time = time.clock()
-
-    # Reload best model.
-    for param, best_param in zip(params, best_params):
-        param.set_value(best_param)
-
-    # Compute test error --- sample multiple times to simulate posterior predictive distribution
-    test_errors = np.zeros((n_test_batches,))
-    test_loss = np.zeros((n_test_batches,))
-    for idx in xrange(int(n_test_resamples)):
-        temp_test_loss, temp_test_errors = zip(*[test_model(i) for i in xrange(n_test_batches)])
-        test_errors += temp_test_errors
-        test_loss += temp_test_loss
-    test_loss = np.sum(test_loss/n_test_resamples) / n_test_batches
-    test_nb_errors = np.sum(test_errors/n_test_resamples)
-    test_error = test_nb_errors / test_set_size
-
-    results = "Done! best epoch {}, test loss {:.4f}, test error {:.2%} ({:,}), training time {:.2f}m"
-    results = results.format(best_iter, test_loss, test_error, test_nb_errors, (end_time-start_time)/60)
-    print(results)
-
-    results_file.write(results + "\n")
-    results_file.close()
-
-    print(('The code for file ' + os.path.split(__file__)[1] + ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
-
+    # print(('The code for file ' + os.path.split(__file__)[1] + ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
+    return train_model, test_model, valid_model
 
 def build_argparser():
     DESCRIPTION = ("Train a Convolutional SB-ResNet using Theano.")
@@ -534,6 +538,9 @@ def build_argparser():
     return p
 
 
+
+
+
 if __name__ == '__main__':
     parser = build_argparser()
     args = parser.parse_args()
@@ -565,15 +572,52 @@ if __name__ == '__main__':
     else:
         dataset = pjoin(dataset_dir, args.dataset + ".npz")
 
-    run_ResNet(dataset=dataset,
-               depth=args.depth,
-               n_epochs=args.max_epoch,
-               batch_size=args.batch_size,
-               lookahead=args.lookahead,
-               alpha0=args.prior_concentration_param,
-               experiment_dir=args.experiment_dir,
-               epsilon=epsilon,
-               gradient_clipping=args.clip_gradient,
-               output_file_base_name=args_string,
-               random_seed=1234,
-               force=args.force)
+    train, test, valid = run_ResNet(dataset=dataset,
+                                       depth=args.depth,
+                                       n_epochs=args.max_epoch,
+                                       batch_size=args.batch_size,
+                                       lookahead=args.lookahead,
+                                       alpha0=args.prior_concentration_param,
+                                       experiment_dir=args.experiment_dir,
+                                       epsilon=epsilon,
+                                       gradient_clipping=args.clip_gradient,
+                                       output_file_base_name=args_string,
+                                       random_seed=1234,
+                                       force=args.force)
+    start = time.time()
+    ops = train.maker.fgraph.toposort()
+    end = time.time()
+    print("Depth %d: %d nodes, %s for toposort" % (args.depth, len(ops), end - start))
+
+    # Note none of the below is verified, caveat lector!
+    import scipy.sparse as sp
+
+    def mark(n):
+        n.index = len(nodes)
+        nodes.append(n)
+
+    def connect(fro, to):
+        if not hasattr(to, "index") or to.index is None:
+            mark(to)
+        lil[fro.index, to.index] = 1
+
+    start = time.time()
+    g = train.maker.fgraph
+    node_count = len(ops) + len(g.variables)
+    lil = sp.lil_matrix((node_count, node_count))
+    nodes = []
+    for n in g.inputs:
+        mark(n)
+    for app in ops:
+        mark(app)
+        for p in app.get_parents():
+            connect(app, p)
+    for o in g.outputs:
+        mark(o)
+        for p in o.get_parents():
+            connect(o, p)
+
+    end = time.time()
+    print("Sparse graph constructed in ", end - start, "with shape", lil.shape)
+
+

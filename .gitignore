@@ -95,3 +95,10 @@ ENV/
 
 datasets
 experiments
+92.txt
+92_quick.svg
+depth20.svg
+depth47.svg
+depth92.svg
+fast_run.svg
+out.txt
